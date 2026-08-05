@@ -839,6 +839,13 @@
             color: white;
         }
 
+        .modal-message {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 4px;
+        }
+
         .modal-btn:active {
             transform: scale(0.97);
         }
@@ -903,6 +910,29 @@
 
         <div class="buttons">
             <button class="btn btn-clear" onclick="clearCurrentOrder()">Limpar</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Confirmação (substitui o confirm nativo) -->
+    <div class="modal-overlay" id="confirmModalOverlay">
+        <div class="modal-box">
+            <div class="modal-title" id="confirmModalTitle">Confirmar</div>
+            <div class="modal-message" id="confirmModalMessage"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" id="confirmModalCancelBtn">Cancelar</button>
+                <button class="modal-btn modal-btn-delete" id="confirmModalOkBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Aviso (substitui o alert nativo) -->
+    <div class="modal-overlay" id="alertModalOverlay">
+        <div class="modal-box">
+            <div class="modal-title">Aviso</div>
+            <div class="modal-message" id="alertModalMessage"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-save" id="alertModalOkBtn">OK</button>
+            </div>
         </div>
     </div>
 
@@ -1011,6 +1041,55 @@
         let editingItemRef = null; // { category, id } quando a editar um item existente
         let expandedCategories = new Set(); // categorias atualmente expandidas
 
+        // ---- Caixas de diálogo próprias ----
+        // Substituem confirm()/alert() nativos, que no Safari (iOS) podem ser
+        // desativados pelo utilizador através de "Suprimir caixas de diálogo".
+
+        // Mostrar aviso. Devolve uma promessa que resolve quando o utilizador fecha.
+        function showAlert(message) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('alertModalOverlay');
+                const okBtn = document.getElementById('alertModalOkBtn');
+                document.getElementById('alertModalMessage').textContent = message;
+
+                function close() {
+                    overlay.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    resolve();
+                }
+                function onOk() { close(); }
+
+                okBtn.addEventListener('click', onOk);
+                overlay.classList.add('active');
+            });
+        }
+
+        // Pedir confirmação. Devolve uma promessa com true (confirmou) ou false.
+        function showConfirm(message, options = {}) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('confirmModalOverlay');
+                const okBtn = document.getElementById('confirmModalOkBtn');
+                const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+                document.getElementById('confirmModalTitle').textContent = options.title || 'Confirmar';
+                document.getElementById('confirmModalMessage').textContent = message;
+                okBtn.textContent = options.okLabel || 'Confirmar';
+
+                function cleanup(result) {
+                    overlay.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    resolve(result);
+                }
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                overlay.classList.add('active');
+            });
+        }
+
         // Inicializar
         function init() {
             renderMenu();
@@ -1057,16 +1136,21 @@
         }
 
         // Eliminar pedido
-        function deleteOrder(orderId) {
+        async function deleteOrder(orderId) {
             if (Object.keys(orders).length === 1) {
-                alert('Deve ter pelo menos um pedido');
+                await showAlert('Deve ter pelo menos um pedido.');
                 return;
             }
 
             const orderName = orders[orderId].name;
             const wasCurrent = currentOrderId === orderId;
 
-            if (confirm(`Eliminar "${orderName}"?`)) {
+            const confirmed = await showConfirm(`Eliminar "${orderName}"?`, {
+                title: 'Eliminar Pedido',
+                okLabel: 'Eliminar'
+            });
+
+            if (confirmed) {
                 delete orders[orderId];
 
                 if (wasCurrent) {
@@ -1314,18 +1398,18 @@
         }
 
         // Guardar item (novo ou editado)
-        function saveMenuItem() {
+        async function saveMenuItem() {
             const name = document.getElementById('itemNameInput').value.trim();
             const priceRaw = document.getElementById('itemPriceInput').value;
             const price = parseFloat(priceRaw);
             const categorySelect = document.getElementById('itemCategorySelect').value;
 
             if (!name) {
-                alert('Por favor indique o nome do item.');
+                await showAlert('Por favor indique o nome do item.');
                 return;
             }
             if (isNaN(price) || price < 0) {
-                alert('Por favor indique um preço válido.');
+                await showAlert('Por favor indique um preço válido.');
                 return;
             }
 
@@ -1333,7 +1417,7 @@
             if (categorySelect === '__new__') {
                 const newCategoryName = document.getElementById('newCategoryInput').value.trim();
                 if (!newCategoryName) {
-                    alert('Por favor indique o nome da nova categoria.');
+                    await showAlert('Por favor indique o nome da nova categoria.');
                     return;
                 }
                 if (!menu[newCategoryName]) {
@@ -1367,24 +1451,34 @@
         }
 
         // Confirmar eliminação de item do menu
-        function promptDeleteMenuItem(category, itemId) {
+        async function promptDeleteMenuItem(category, itemId) {
             const item = menu[category].find(i => i.id === itemId);
             if (!item) return;
 
-            if (confirm(`Eliminar "${item.name}" do menu?`)) {
+            const confirmed = await showConfirm(`Eliminar "${item.name}" do menu?`, {
+                title: 'Eliminar Item',
+                okLabel: 'Eliminar'
+            });
+
+            if (confirmed) {
                 menu[category] = menu[category].filter(i => i.id !== itemId);
                 renderMenu();
             }
         }
 
         // Eliminar item a partir do modal de edição
-        function deleteMenuItemFromModal() {
+        async function deleteMenuItemFromModal() {
             if (!editingItemRef) return;
             const { category, id } = editingItemRef;
             const item = menu[category].find(i => i.id === id);
             if (!item) return;
 
-            if (confirm(`Eliminar "${item.name}" do menu?`)) {
+            const confirmed = await showConfirm(`Eliminar "${item.name}" do menu?`, {
+                title: 'Eliminar Item',
+                okLabel: 'Eliminar'
+            });
+
+            if (confirmed) {
                 menu[category] = menu[category].filter(i => i.id !== id);
                 closeItemModal();
                 renderMenu();
@@ -1392,9 +1486,9 @@
         }
 
         // Confirmar eliminação de categoria (e todos os seus itens)
-        function promptDeleteCategory(category) {
+        async function promptDeleteCategory(category) {
             if (Object.keys(menu).length === 1) {
-                alert('Deve ter pelo menos uma categoria no menu.');
+                await showAlert('Deve ter pelo menos uma categoria no menu.');
                 return;
             }
 
@@ -1403,7 +1497,12 @@
                 ? `A categoria "${category}" tem ${itemCount} item(ns). Eliminar a categoria também elimina todos os seus itens. Deseja continuar?`
                 : `Eliminar a categoria "${category}"?`;
 
-            if (confirm(message)) {
+            const confirmed = await showConfirm(message, {
+                title: 'Eliminar Categoria',
+                okLabel: 'Eliminar'
+            });
+
+            if (confirmed) {
                 delete menu[category];
                 expandedCategories.delete(category);
                 renderMenu();
@@ -1422,14 +1521,14 @@
         }
 
         // Guardar nova categoria vazia
-        function saveNewCategory() {
+        async function saveNewCategory() {
             const name = document.getElementById('categoryNameInput').value.trim();
             if (!name) {
-                alert('Por favor indique o nome da categoria.');
+                await showAlert('Por favor indique o nome da categoria.');
                 return;
             }
             if (menu[name]) {
-                alert('Já existe uma categoria com este nome.');
+                await showAlert('Já existe uma categoria com este nome.');
                 return;
             }
             menu[name] = [];
@@ -1521,13 +1620,18 @@
         }
 
         // Limpar pedido atual
-        function clearCurrentOrder() {
+        async function clearCurrentOrder() {
             if (!currentOrderId || Object.keys(orders[currentOrderId].items).length === 0) {
-                alert('Não há itens para limpar');
+                await showAlert('Não há itens para limpar.');
                 return;
             }
 
-            if (confirm('Deseja cancelar este pedido?')) {
+            const confirmed = await showConfirm('Deseja cancelar este pedido?', {
+                title: 'Limpar Pedido',
+                okLabel: 'Limpar'
+            });
+
+            if (confirmed) {
                 orders[currentOrderId].items = {};
                 updateOrderView();
                 switchContentTab('menu');
