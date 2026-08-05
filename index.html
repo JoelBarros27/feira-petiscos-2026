@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pedidos - Restaurante</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 100vh;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .orders-tabs-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+            padding-right: 12px;
+        }
+
+        .orders-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 15px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .manage-orders-btn {
+            flex-shrink: 0;
+            background: white;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .manage-orders-btn:active {
+            background: #fff0f0;
+            transform: scale(0.95);
+        }
+
+        .orders-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .orders-tabs::-webkit-scrollbar-track {
+            background: #e0e0e0;
+        }
+
+        .orders-tabs::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        .order-tab {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .order-tab:active {
+            transform: scale(0.95);
+        }
+
+        .order-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .order-tab-add {
+            padding: 8px 14px;
+            background: white;
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .order-tab-add:active {
+            background: #f0f7ff;
+            transform: scale(0.95);
+        }
+
+        .order-tab-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        .manage-order-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .manage-order-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .manage-order-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 3px;
+            word-break: break-word;
+        }
+
+        .manage-order-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .manage-order-delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+            min-width: 48px;
+            min-height: 44px;
+            transition: all 0.2s ease;
+        }
+
+        .manage-order-delete-btn:active {
+            background: #ff5252;
+            transform: scale(0.95);
+        }
+
+        .manage-orders-empty {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #menuTab {
+            flex-direction: column;
+        }
+
+        .category {
+            margin-bottom: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 14px;
+            background: #f9f9f9;
+            cursor: pointer;
+            user-select: none;
+            gap: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .category-header:active {
+            background: #f0f0f0;
+        }
+
+        .category-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .category-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: #667eea;
+            background: #eef0fd;
+            padding: 2px 8px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .category-chevron {
+            font-size: 12px;
+            color: #667eea;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+            display: inline-block;
+        }
+
+        .category-chevron.expanded {
+            transform: rotate(180deg);
+        }
+
+        .category-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .category-body {
+            display: none;
+            padding: 12px;
+            background: white;
+        }
+
+        .category-body.expanded {
+            display: block;
+        }
+
+        .item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .item:active {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .item-price {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .item-add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 8px;
+        }
+
+        .item-add-btn:active {
+            background: #5568d3;
+            transform: scale(0.95);
+        }
+
+        .order-item {
+            background: #f0f7ff;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .order-item-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .order-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .order-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .qty-btn {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .qty-btn:active {
+            background: #f0f7ff;
+            border-color: #667eea;
+        }
+
+        .qty-display {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .order-item-price {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 55px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .remove-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .remove-btn:active {
+            background: #ff5252;
+            transform: scale(0.95);
+        }
+
+        .empty-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: #999;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .summary {
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .summary-label {
+            color: #666;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-clear {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-clear:active {
+            background: #ff5252;
+            transform: scale(0.98);
+        }
+
+        .btn-confirm {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-confirm:active {
+            background: #40c057;
+            transform: scale(0.98);
+        }
+
+        .btn-confirm:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .order-name-section {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .order-name-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .order-name-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .order-name-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .category-delete-btn {
+            background: white;
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .category-delete-btn:active {
+            background: #fff0f0;
+            transform: scale(0.95);
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .menu-header-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .edit-menu-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .edit-menu-btn.active {
+            background: #51cf66;
+        }
+
+        .edit-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 6px;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .item-edit-btn, .item-delete-btn {
+            background: white;
+            border: 1px solid #667eea;
+            color: #667eea;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .item-delete-btn {
+            color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+
+        .item-edit-btn:active, .item-delete-btn:active {
+            transform: scale(0.9);
+        }
+
+        .add-new-btn {
+            background: white;
+            border: 2px dashed #667eea;
+            color: #667eea;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .add-new-btn:active {
+            background: #f0f7ff;
+            transform: scale(0.98);
+        }
+
+        .add-category-btn {
+            background: white;
+            border: 2px dashed #999;
+            color: #666;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 5px;
+            transition: all 0.2s ease;
+        }
+
+        .add-category-btn:active {
+            background: #f5f5f5;
+            transform: scale(0.98);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .modal-field {
+            margin-bottom: 14px;
+        }
+
+        .modal-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .modal-input, .modal-select {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .modal-input:focus, .modal-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn-cancel {
+            background: #eee;
+            color: #666;
+        }
+
+        .modal-btn-delete {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .modal-btn-save {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn:active {
+            transform: scale(0.97);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>📋 Registo de Pedidos</h1>
+            </div>
+        </div>
+
+        <!-- ABAS DOS PEDIDOS -->
+        <div class="orders-tabs-row">
+            <div class="orders-tabs" id="ordersTabs"></div>
+            <button class="manage-orders-btn" onclick="openManageOrdersModal()">Gerir</button>
+        </div>
+
+        <!-- ABAS DO CONTEÚDO (Menu / Pedido) -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchContentTab('menu')">Menu</button>
+            <button class="tab-btn" onclick="switchContentTab('order')">Pedido</button>
+        </div>
+
+        <!-- ABA MENU -->
+        <div id="menuTab" class="tab-content active">
+            <div class="menu-header">
+                <div class="menu-header-title">Itens do Menu</div>
+                <button class="edit-menu-btn" id="editMenuToggleBtn" onclick="toggleMenuEditMode()">Editar Menu</button>
+            </div>
+            <div id="menuContainer"></div>
+        </div>
+
+        <!-- ABA PEDIDO -->
+        <div id="orderTab" class="tab-content">
+            <div class="order-name-section">
+                <div class="order-name-label">Nome do Pedido (ex: Mesa 5, Cliente Nome)</div>
+                <input type="text" class="order-name-input" id="orderName" placeholder="Identificar este pedido..." onchange="updateCurrentOrderName()">
+            </div>
+            <div id="orderItemsContainer"></div>
+            <div class="empty-message" id="emptyOrder">
+                <div class="empty-icon">🛒</div>
+                <p>Nenhum item adicionado ainda</p>
+            </div>
+        </div>
+
+        <!-- RESUMO E BOTÕES -->
+        <div id="summarySection" class="summary">
+            <div class="summary-row">
+                <span class="summary-label">Itens no Pedido:</span>
+                <span class="summary-value" id="itemCount">0</span>
+            </div>
+            <div class="summary-row total">
+                <span class="summary-label">Total:</span>
+                <span class="summary-value" id="totalPrice">€0,00</span>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-clear" onclick="clearCurrentOrder()">Limpar</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Gerir Pedidos -->
+    <div class="modal-overlay" id="manageOrdersModalOverlay">
+        <div class="modal-box">
+            <div class="modal-title">Gerir Pedidos</div>
+            <div id="manageOrdersList"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeManageOrdersModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Adicionar/Editar Item do Menu -->
+    <div class="modal-overlay" id="itemModalOverlay">
+        <div class="modal-box">
+            <div class="modal-title" id="itemModalTitle">Adicionar Item</div>
+
+            <div class="modal-field">
+                <label class="modal-label">Categoria</label>
+                <select class="modal-select" id="itemCategorySelect" onchange="handleCategorySelectChange()">
+                </select>
+            </div>
+
+            <div class="modal-field" id="newCategoryField" style="display: none;">
+                <label class="modal-label">Nome da Nova Categoria</label>
+                <input type="text" class="modal-input" id="newCategoryInput" placeholder="Ex: Petiscos">
+            </div>
+
+            <div class="modal-field">
+                <label class="modal-label">Nome do Item</label>
+                <input type="text" class="modal-input" id="itemNameInput" placeholder="Ex: Salada Mista">
+            </div>
+
+            <div class="modal-field">
+                <label class="modal-label">Preço (€)</label>
+                <input type="number" class="modal-input" id="itemPriceInput" placeholder="Ex: 5.50" step="0.01" min="0" inputmode="decimal">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-delete" id="itemModalDeleteBtn" style="display: none;" onclick="deleteMenuItemFromModal()">Eliminar</button>
+                <button class="modal-btn modal-btn-cancel" onclick="closeItemModal()">Cancelar</button>
+                <button class="modal-btn modal-btn-save" onclick="saveMenuItem()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Adicionar Nova Categoria -->
+    <div class="modal-overlay" id="categoryModalOverlay">
+        <div class="modal-box">
+            <div class="modal-title">Nova Categoria</div>
+
+            <div class="modal-field">
+                <label class="modal-label">Nome da Categoria</label>
+                <input type="text" class="modal-input" id="categoryNameInput" placeholder="Ex: Petiscos">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeCategoryModal()">Cancelar</button>
+                <button class="modal-btn modal-btn-save" onclick="saveNewCategory()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Menu com categorias (cada item tem um id único e estável)
+        let menuItemCounter = 1;
+        function newItemId() {
+            return 'item-' + (menuItemCounter++);
+        }
+
+        const menu = {
+            'Entradas': [
+                { id: newItemId(), name: 'Pão de Alho', price: 4.50 },
+                { id: newItemId(), name: 'Camarões à Guilho', price: 8.50 },
+                { id: newItemId(), name: 'Pastéis de Nata (3)', price: 5.00 },
+                { id: newItemId(), name: 'Queijo Fundido', price: 6.00 }
+            ],
+            'Pratos Principais': [
+                { id: newItemId(), name: 'Bacalhau à Brás', price: 14.50 },
+                { id: newItemId(), name: 'Arroz de Frutos do Mar', price: 16.00 },
+                { id: newItemId(), name: 'Frango Piri-Piri', price: 12.50 },
+                { id: newItemId(), name: 'Carne Assada com Batatas', price: 15.00 },
+                { id: newItemId(), name: 'Sardinas Grelhadas', price: 13.50 }
+            ],
+            'Bebidas': [
+                { id: newItemId(), name: 'Água', price: 1.50 },
+                { id: newItemId(), name: 'Refrigerante', price: 2.50 },
+                { id: newItemId(), name: 'Vinho da Casa', price: 4.00 },
+                { id: newItemId(), name: 'Cerveja', price: 3.00 },
+                { id: newItemId(), name: 'Sumo Natural', price: 3.50 }
+            ],
+            'Sobremesas': [
+                { id: newItemId(), name: 'Pudim de Leite', price: 4.00 },
+                { id: newItemId(), name: 'Mousse de Chocolate', price: 5.00 },
+                { id: newItemId(), name: 'Fruta da Época', price: 3.50 },
+                { id: newItemId(), name: 'Sorvete', price: 4.50 }
+            ]
+        };
+
+        let orders = {};
+        let currentOrderId = null;
+        let orderCounter = 1;
+        let menuEditMode = false;
+        let editingItemRef = null; // { category, id } quando a editar um item existente
+        let expandedCategories = new Set(); // categorias atualmente expandidas
+
+        // Inicializar
+        function init() {
+            renderMenu();
+            createNewOrder();
+        }
+
+        // Criar novo pedido
+        function createNewOrder() {
+            const orderId = 'order-' + Date.now() + '-' + Math.random();
+            orders[orderId] = {
+                id: orderId,
+                name: `Pedido ${orderCounter++}`,
+                items: {}
+            };
+            selectOrder(orderId);
+            renderOrdersTabs();
+            switchContentTab('menu');
+        }
+
+        // Selecionar pedido
+        function selectOrder(orderId) {
+            currentOrderId = orderId;
+            updateOrderView();
+            renderOrdersTabs();
+            document.getElementById('orderName').value = orders[orderId].name;
+            switchContentTab('menu');
+        }
+
+        // Atualizar nome do pedido
+        function updateCurrentOrderName() {
+            if (currentOrderId) {
+                orders[currentOrderId].name = document.getElementById('orderName').value || `Pedido sem nome`;
+                renderOrdersTabs();
+            }
+        }
+
+        // Eliminar pedido
+        function deleteOrder(orderId) {
+            if (Object.keys(orders).length === 1) {
+                alert('Deve ter pelo menos um pedido');
+                return;
+            }
+
+            const orderName = orders[orderId].name;
+
+            if (confirm(`Eliminar "${orderName}"?`)) {
+                delete orders[orderId];
+
+                if (currentOrderId === orderId) {
+                    const remainingOrders = Object.keys(orders);
+                    currentOrderId = remainingOrders[0];
+                    updateOrderView();
+                }
+
+                renderOrdersTabs();
+                renderManageOrdersList();
+            }
+        }
+
+        // Renderizar abas dos pedidos (apenas para seleção)
+        function renderOrdersTabs() {
+            const container = document.getElementById('ordersTabs');
+            container.innerHTML = '';
+
+            // Aba "+" para criar um novo pedido, sempre no início da lista
+            const addTab = document.createElement('div');
+            addTab.className = 'order-tab-add';
+            addTab.textContent = '+';
+            addTab.title = 'Novo Pedido';
+            addTab.addEventListener('click', () => createNewOrder());
+            container.appendChild(addTab);
+
+            for (const [orderId, order] of Object.entries(orders)) {
+                const tab = document.createElement('div');
+                tab.className = `order-tab ${currentOrderId === orderId ? 'active' : ''}`;
+                
+                const itemCount = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0);
+                
+                let tabHTML = order.name;
+                if (itemCount > 0) {
+                    tabHTML += `<span class="order-tab-badge">${itemCount}</span>`;
+                }
+                
+                tab.innerHTML = tabHTML;
+                tab.addEventListener('click', () => selectOrder(orderId));
+
+                container.appendChild(tab);
+            }
+        }
+
+        // Abrir modal de gestão de pedidos
+        function openManageOrdersModal() {
+            renderManageOrdersList();
+            document.getElementById('manageOrdersModalOverlay').classList.add('active');
+        }
+
+        // Fechar modal de gestão de pedidos
+        function closeManageOrdersModal() {
+            document.getElementById('manageOrdersModalOverlay').classList.remove('active');
+        }
+
+        // Renderizar lista de pedidos dentro do modal de gestão
+        function renderManageOrdersList() {
+            const container = document.getElementById('manageOrdersList');
+            const orderEntries = Object.entries(orders);
+
+            if (orderEntries.length === 0) {
+                container.innerHTML = '<div class="manage-orders-empty">Não há pedidos.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            orderEntries.forEach(([orderId, order]) => {
+                const itemCount = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0);
+                const total = Object.values(order.items).reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+                const row = document.createElement('div');
+                row.className = 'manage-order-row';
+                row.innerHTML = `
+                    <div class="manage-order-info">
+                        <div class="manage-order-name">${order.name}</div>
+                        <div class="manage-order-meta">${itemCount} item(ns) · €${total.toFixed(2)}</div>
+                    </div>
+                    <button class="manage-order-delete-btn">Eliminar</button>
+                `;
+
+                row.querySelector('.manage-order-delete-btn').addEventListener('click', () => {
+                    deleteOrder(orderId);
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        // Renderizar menu
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            container.innerHTML = '';
+
+            for (const [category, items] of Object.entries(menu)) {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                const isExpanded = expandedCategories.has(category);
+                const safeCategory = category.replace(/'/g, "\\'");
+
+                let headerHTML = `
+                    <div class="category-header" onclick="toggleCategory('${safeCategory}')">
+                        <div class="category-header-left">
+                            <span class="category-title">${category}</span>
+                            <span class="category-count">${items.length}</span>
+                        </div>
+                        <div class="category-header-actions">
+                            ${menuEditMode ? `<button class="category-delete-btn" onclick="event.stopPropagation(); promptDeleteCategory('${safeCategory}')">Eliminar</button>` : ''}
+                            <span class="category-chevron ${isExpanded ? 'expanded' : ''}">▼</span>
+                        </div>
+                    </div>
+                `;
+
+                let bodyHTML = `<div class="category-body ${isExpanded ? 'expanded' : ''}">`;
+
+                items.forEach((item) => {
+                    const safeName = item.name.replace(/'/g, "\\'");
+                    if (menuEditMode) {
+                        bodyHTML += `
+                            <div class="item">
+                                <div class="item-info">
+                                    <div class="item-name">${item.name}</div>
+                                    <div class="item-price">€${item.price.toFixed(2)}</div>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="item-edit-btn" onclick="openEditItemModal('${safeCategory}', '${item.id}')">Editar</button>
+                                    <button class="item-delete-btn" onclick="promptDeleteMenuItem('${safeCategory}', '${item.id}')">Eliminar</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        bodyHTML += `
+                            <div class="item">
+                                <div class="item-info">
+                                    <div class="item-name">${item.name}</div>
+                                    <div class="item-price">€${item.price.toFixed(2)}</div>
+                                </div>
+                                <button class="item-add-btn" onclick="addItem('${item.id}', '${safeName}', ${item.price})">
+                                    Adicionar
+                                </button>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (items.length === 0) {
+                    bodyHTML += `<div style="text-align: center; color: #999; font-size: 12px; padding: 8px 0;">Sem itens nesta categoria</div>`;
+                }
+
+                if (menuEditMode) {
+                    bodyHTML += `<div class="add-new-btn" onclick="openAddItemModal('${safeCategory}')">Adicionar item em "${category}"</div>`;
+                }
+
+                bodyHTML += `</div>`;
+
+                categoryDiv.innerHTML = headerHTML + bodyHTML;
+                container.appendChild(categoryDiv);
+            }
+
+            if (menuEditMode) {
+                const addCategoryDiv = document.createElement('div');
+                addCategoryDiv.className = 'add-category-btn';
+                addCategoryDiv.textContent = 'Nova Categoria';
+                addCategoryDiv.onclick = openCategoryModal;
+                container.appendChild(addCategoryDiv);
+            }
+        }
+
+        // Expandir ou colapsar uma categoria
+        function toggleCategory(category) {
+            if (expandedCategories.has(category)) {
+                expandedCategories.delete(category);
+            } else {
+                expandedCategories.add(category);
+            }
+            renderMenu();
+        }
+
+        // Alternar modo de edição do menu
+        function toggleMenuEditMode() {
+            menuEditMode = !menuEditMode;
+            const btn = document.getElementById('editMenuToggleBtn');
+            btn.textContent = menuEditMode ? 'Concluir Edição' : 'Editar Menu';
+            btn.classList.toggle('active', menuEditMode);
+            renderMenu();
+        }
+
+        // Preencher o select de categorias no modal de item
+        function populateCategorySelect(selectedCategory) {
+            const select = document.getElementById('itemCategorySelect');
+            select.innerHTML = '';
+
+            Object.keys(menu).forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+            });
+
+            const newOption = document.createElement('option');
+            newOption.value = '__new__';
+            newOption.textContent = '+ Nova categoria...';
+            select.appendChild(newOption);
+
+            select.value = selectedCategory || Object.keys(menu)[0];
+            handleCategorySelectChange();
+        }
+
+        // Mostrar/esconder campo de nova categoria consoante o select
+        function handleCategorySelectChange() {
+            const select = document.getElementById('itemCategorySelect');
+            const newCategoryField = document.getElementById('newCategoryField');
+            newCategoryField.style.display = select.value === '__new__' ? 'block' : 'none';
+        }
+
+        // Abrir modal para adicionar novo item
+        function openAddItemModal(category) {
+            editingItemRef = null;
+            document.getElementById('itemModalTitle').textContent = 'Adicionar Item';
+            document.getElementById('itemModalDeleteBtn').style.display = 'none';
+            document.getElementById('itemNameInput').value = '';
+            document.getElementById('itemPriceInput').value = '';
+            document.getElementById('newCategoryInput').value = '';
+            populateCategorySelect(category);
+            document.getElementById('itemModalOverlay').classList.add('active');
+        }
+
+        // Abrir modal para editar item existente
+        function openEditItemModal(category, itemId) {
+            const item = menu[category].find(i => i.id === itemId);
+            if (!item) return;
+
+            editingItemRef = { category, id: itemId };
+            document.getElementById('itemModalTitle').textContent = 'Editar Item';
+            document.getElementById('itemModalDeleteBtn').style.display = 'block';
+            document.getElementById('itemNameInput').value = item.name;
+            document.getElementById('itemPriceInput').value = item.price;
+            document.getElementById('newCategoryInput').value = '';
+            populateCategorySelect(category);
+            document.getElementById('itemModalOverlay').classList.add('active');
+        }
+
+        // Fechar modal de item
+        function closeItemModal() {
+            document.getElementById('itemModalOverlay').classList.remove('active');
+            editingItemRef = null;
+        }
+
+        // Guardar item (novo ou editado)
+        function saveMenuItem() {
+            const name = document.getElementById('itemNameInput').value.trim();
+            const priceRaw = document.getElementById('itemPriceInput').value;
+            const price = parseFloat(priceRaw);
+            const categorySelect = document.getElementById('itemCategorySelect').value;
+
+            if (!name) {
+                alert('Por favor indique o nome do item.');
+                return;
+            }
+            if (isNaN(price) || price < 0) {
+                alert('Por favor indique um preço válido.');
+                return;
+            }
+
+            let targetCategory = categorySelect;
+            if (categorySelect === '__new__') {
+                const newCategoryName = document.getElementById('newCategoryInput').value.trim();
+                if (!newCategoryName) {
+                    alert('Por favor indique o nome da nova categoria.');
+                    return;
+                }
+                if (!menu[newCategoryName]) {
+                    menu[newCategoryName] = [];
+                }
+                targetCategory = newCategoryName;
+            }
+
+            if (editingItemRef) {
+                // Editar item existente
+                const { category: oldCategory, id } = editingItemRef;
+                const item = menu[oldCategory].find(i => i.id === id);
+                if (item) {
+                    item.name = name;
+                    item.price = price;
+
+                    // Se a categoria mudou, mover o item
+                    if (oldCategory !== targetCategory) {
+                        menu[oldCategory] = menu[oldCategory].filter(i => i.id !== id);
+                        menu[targetCategory].push(item);
+                    }
+                }
+            } else {
+                // Adicionar novo item
+                menu[targetCategory].push({ id: newItemId(), name, price });
+            }
+
+            closeItemModal();
+            expandedCategories.add(targetCategory);
+            renderMenu();
+        }
+
+        // Confirmar eliminação de item do menu
+        function promptDeleteMenuItem(category, itemId) {
+            const item = menu[category].find(i => i.id === itemId);
+            if (!item) return;
+
+            if (confirm(`Eliminar "${item.name}" do menu?`)) {
+                menu[category] = menu[category].filter(i => i.id !== itemId);
+                renderMenu();
+            }
+        }
+
+        // Eliminar item a partir do modal de edição
+        function deleteMenuItemFromModal() {
+            if (!editingItemRef) return;
+            const { category, id } = editingItemRef;
+            const item = menu[category].find(i => i.id === id);
+            if (!item) return;
+
+            if (confirm(`Eliminar "${item.name}" do menu?`)) {
+                menu[category] = menu[category].filter(i => i.id !== id);
+                closeItemModal();
+                renderMenu();
+            }
+        }
+
+        // Confirmar eliminação de categoria (e todos os seus itens)
+        function promptDeleteCategory(category) {
+            if (Object.keys(menu).length === 1) {
+                alert('Deve ter pelo menos uma categoria no menu.');
+                return;
+            }
+
+            const itemCount = menu[category].length;
+            const message = itemCount > 0
+                ? `A categoria "${category}" tem ${itemCount} item(ns). Eliminar a categoria também elimina todos os seus itens. Deseja continuar?`
+                : `Eliminar a categoria "${category}"?`;
+
+            if (confirm(message)) {
+                delete menu[category];
+                expandedCategories.delete(category);
+                renderMenu();
+            }
+        }
+
+        // Abrir modal de nova categoria
+        function openCategoryModal() {
+            document.getElementById('categoryNameInput').value = '';
+            document.getElementById('categoryModalOverlay').classList.add('active');
+        }
+
+        // Fechar modal de nova categoria
+        function closeCategoryModal() {
+            document.getElementById('categoryModalOverlay').classList.remove('active');
+        }
+
+        // Guardar nova categoria vazia
+        function saveNewCategory() {
+            const name = document.getElementById('categoryNameInput').value.trim();
+            if (!name) {
+                alert('Por favor indique o nome da categoria.');
+                return;
+            }
+            if (menu[name]) {
+                alert('Já existe uma categoria com este nome.');
+                return;
+            }
+            menu[name] = [];
+            expandedCategories.add(name);
+            closeCategoryModal();
+            renderMenu();
+        }
+
+        // Adicionar item ao pedido atual
+        function addItem(key, name, price) {
+            if (!currentOrderId) return;
+            
+            const order = orders[currentOrderId];
+            if (!order.items[key]) {
+                order.items[key] = { name, price, quantity: 0 };
+            }
+            order.items[key].quantity++;
+            updateOrderView();
+        }
+
+        // Aumentar quantidade
+        function increaseQty(key) {
+            if (!currentOrderId) return;
+            if (orders[currentOrderId].items[key]) {
+                orders[currentOrderId].items[key].quantity++;
+                updateOrderView();
+            }
+        }
+
+        // Diminuir quantidade
+        function decreaseQty(key) {
+            if (!currentOrderId) return;
+            if (orders[currentOrderId].items[key] && orders[currentOrderId].items[key].quantity > 1) {
+                orders[currentOrderId].items[key].quantity--;
+                updateOrderView();
+            }
+        }
+
+        // Remover item
+        function removeItem(key) {
+            if (!currentOrderId) return;
+            delete orders[currentOrderId].items[key];
+            updateOrderView();
+        }
+
+        // Atualizar visualização do pedido
+        function updateOrderView() {
+            if (!currentOrderId) return;
+
+            const order = orders[currentOrderId];
+            const itemsContainer = document.getElementById('orderItemsContainer');
+            const emptyOrder = document.getElementById('emptyOrder');
+            const itemCount = document.getElementById('itemCount');
+            const totalPrice = document.getElementById('totalPrice');
+
+            let totalItems = 0;
+            let total = 0;
+            let itemsHTML = '';
+
+            for (const [key, item] of Object.entries(order.items)) {
+                totalItems += item.quantity;
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                itemsHTML += `
+                    <div class="order-item">
+                        <div class="order-item-left">
+                            <div class="order-item-name">${item.name}</div>
+                            <div class="order-item-controls">
+                                <button class="qty-btn" onclick="decreaseQty('${key}')">−</button>
+                                <div class="qty-display">${item.quantity}x</div>
+                                <button class="qty-btn" onclick="increaseQty('${key}')">+</button>
+                                <span style="color: #999; font-size: 11px; margin-left: 6px;">€${item.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="order-item-price">€${itemTotal.toFixed(2)}</div>
+                        <button class="remove-btn" onclick="removeItem('${key}')">Remover</button>
+                    </div>
+                `;
+            }
+
+            itemsContainer.innerHTML = itemsHTML;
+            emptyOrder.style.display = Object.keys(order.items).length === 0 ? 'flex' : 'none';
+            itemCount.textContent = totalItems;
+            totalPrice.textContent = `€${total.toFixed(2)}`;
+
+            // Atualizar abas
+            renderOrdersTabs();
+        }
+
+        // Limpar pedido atual
+        function clearCurrentOrder() {
+            if (!currentOrderId || Object.keys(orders[currentOrderId].items).length === 0) {
+                alert('Não há itens para limpar');
+                return;
+            }
+
+            if (confirm('Deseja cancelar este pedido?')) {
+                orders[currentOrderId].items = {};
+                updateOrderView();
+                switchContentTab('menu');
+            }
+        }
+
+        // Alternar abas de conteúdo
+        function switchContentTab(tabName) {
+            // Esconder todos os tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remover active de todos os botões
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar o tab selecionado
+            const tabMap = {
+                'menu': 'menuTab',
+                'order': 'orderTab'
+            };
+            const btnIndex = { 'menu': 0, 'order': 1 }[tabName];
+            const tab = tabMap[tabName];
+
+            if (tab) {
+                document.getElementById(tab).classList.add('active');
+                const btns = document.querySelectorAll('.tab-btn');
+                if (btns[btnIndex]) {
+                    btns[btnIndex].classList.add('active');
+                }
+            }
+        }
+
+        // Iniciar aplicação
+        init();
+    </script>
+</body>
+</html>
