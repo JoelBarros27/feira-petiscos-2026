@@ -764,6 +764,12 @@
             display: flex;
         }
 
+        /* Confirmação e aviso ficam sempre por cima dos restantes modais */
+        #confirmModalOverlay,
+        #alertModalOverlay {
+            z-index: 2000;
+        }
+
         .modal-box {
             background: white;
             border-radius: 12px;
