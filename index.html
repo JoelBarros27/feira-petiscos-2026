@@ -11,6 +11,20 @@
             box-sizing: border-box;
         }
 
+        /* Evita o zoom por duplo-toque (double-tap) no Safari/iOS
+           e o realce cinzento ao tocar em elementos interativos */
+        button,
+        .order-tab,
+        .order-tab-add,
+        .category-header,
+        .add-new-btn,
+        .add-category-btn,
+        .item,
+        .tab-btn {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         html, body {
             height: 100%;
         }
