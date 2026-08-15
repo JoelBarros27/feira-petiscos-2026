@@ -1072,6 +1072,17 @@
         let editingItemRef = null; // { category, id } quando a editar um item existente
         let expandedCategories = new Set(); // categorias atualmente expandidas
 
+        // Escapar texto introduzido pelo utilizador antes de o inserir em HTML.
+        // Necessário porque nomes com aspas ou < > quebrariam a marcação.
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ---- Caixas de diálogo próprias ----
         // Substituem confirm()/alert() nativos, que no Safari (iOS) podem ser
         // desativados pelo utilizador através de "Suprimir caixas de diálogo".
@@ -1216,7 +1227,7 @@
                 
                 const itemCount = Object.values(order.items).reduce((sum, item) => sum + item.quantity, 0);
                 
-                let tabHTML = order.name;
+                let tabHTML = escapeHtml(order.name);
                 if (itemCount > 0) {
                     tabHTML += `<span class="order-tab-badge">${itemCount}</span>`;
                 }
@@ -1259,7 +1270,7 @@
                 row.className = 'manage-order-row';
                 row.innerHTML = `
                     <div class="manage-order-info">
-                        <div class="manage-order-name">${order.name}</div>
+                        <div class="manage-order-name">${escapeHtml(order.name)}</div>
                         <div class="manage-order-meta">${itemCount} item(ns) · €${total.toFixed(2)}</div>
                     </div>
                     <button class="manage-order-delete-btn">Eliminar</button>
@@ -1287,64 +1298,116 @@
                 categoryDiv.className = 'category';
 
                 const isExpanded = expandedCategories.has(category);
-                const safeCategory = category.replace(/'/g, "\\'");
 
-                let headerHTML = `
-                    <div class="category-header" onclick="toggleCategory('${safeCategory}')">
-                        <div class="category-header-left">
-                            <span class="category-title">${category}</span>
-                            <span class="category-count">${items.length}</span>
-                        </div>
-                        <div class="category-header-actions">
-                            ${menuEditMode ? `<button class="category-delete-btn" onclick="event.stopPropagation(); promptDeleteCategory('${safeCategory}')">Eliminar</button>` : ''}
-                            <span class="category-chevron ${isExpanded ? 'expanded' : ''}">▼</span>
-                        </div>
-                    </div>
-                `;
+                // ---- Cabeçalho da categoria ----
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.addEventListener('click', () => toggleCategory(category));
 
-                let bodyHTML = `<div class="category-body ${isExpanded ? 'expanded' : ''}">`;
+                const headerLeft = document.createElement('div');
+                headerLeft.className = 'category-header-left';
+
+                const title = document.createElement('span');
+                title.className = 'category-title';
+                title.textContent = category;
+
+                const count = document.createElement('span');
+                count.className = 'category-count';
+                count.textContent = items.length;
+
+                headerLeft.appendChild(title);
+                headerLeft.appendChild(count);
+
+                const headerActions = document.createElement('div');
+                headerActions.className = 'category-header-actions';
+
+                if (menuEditMode) {
+                    const delCatBtn = document.createElement('button');
+                    delCatBtn.className = 'category-delete-btn';
+                    delCatBtn.textContent = 'Eliminar';
+                    delCatBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        promptDeleteCategory(category);
+                    });
+                    headerActions.appendChild(delCatBtn);
+                }
+
+                const chevron = document.createElement('span');
+                chevron.className = 'category-chevron' + (isExpanded ? ' expanded' : '');
+                chevron.textContent = '▼';
+                headerActions.appendChild(chevron);
+
+                header.appendChild(headerLeft);
+                header.appendChild(headerActions);
+
+                // ---- Corpo da categoria ----
+                const body = document.createElement('div');
+                body.className = 'category-body' + (isExpanded ? ' expanded' : '');
 
                 items.forEach((item) => {
-                    const safeName = item.name.replace(/'/g, "\\'");
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item';
+
+                    const info = document.createElement('div');
+                    info.className = 'item-info';
+
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'item-name';
+                    nameDiv.textContent = item.name;
+
+                    const priceDiv = document.createElement('div');
+                    priceDiv.className = 'item-price';
+                    priceDiv.textContent = `€${item.price.toFixed(2)}`;
+
+                    info.appendChild(nameDiv);
+                    info.appendChild(priceDiv);
+                    itemDiv.appendChild(info);
+
                     if (menuEditMode) {
-                        bodyHTML += `
-                            <div class="item">
-                                <div class="item-info">
-                                    <div class="item-name">${item.name}</div>
-                                    <div class="item-price">€${item.price.toFixed(2)}</div>
-                                </div>
-                                <div class="item-actions">
-                                    <button class="item-edit-btn" onclick="openEditItemModal('${safeCategory}', '${item.id}')">Editar</button>
-                                    <button class="item-delete-btn" onclick="promptDeleteMenuItem('${safeCategory}', '${item.id}')">Eliminar</button>
-                                </div>
-                            </div>
-                        `;
+                        const actions = document.createElement('div');
+                        actions.className = 'item-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'item-edit-btn';
+                        editBtn.textContent = 'Editar';
+                        editBtn.addEventListener('click', () => openEditItemModal(category, item.id));
+
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'item-delete-btn';
+                        delBtn.textContent = 'Eliminar';
+                        delBtn.addEventListener('click', () => promptDeleteMenuItem(category, item.id));
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(delBtn);
+                        itemDiv.appendChild(actions);
                     } else {
-                        bodyHTML += `
-                            <div class="item">
-                                <div class="item-info">
-                                    <div class="item-name">${item.name}</div>
-                                    <div class="item-price">€${item.price.toFixed(2)}</div>
-                                </div>
-                                <button class="item-add-btn" onclick="addItem('${item.id}', '${safeName}', ${item.price})">
-                                    Adicionar
-                                </button>
-                            </div>
-                        `;
+                        const addBtn = document.createElement('button');
+                        addBtn.className = 'item-add-btn';
+                        addBtn.textContent = 'Adicionar';
+                        addBtn.addEventListener('click', () => addItem(item.id, item.name, item.price));
+                        itemDiv.appendChild(addBtn);
                     }
+
+                    body.appendChild(itemDiv);
                 });
 
                 if (items.length === 0) {
-                    bodyHTML += `<div style="text-align: center; color: #999; font-size: 12px; padding: 8px 0;">Sem itens nesta categoria</div>`;
+                    const empty = document.createElement('div');
+                    empty.style.cssText = 'text-align: center; color: #999; font-size: 12px; padding: 8px 0;';
+                    empty.textContent = 'Sem itens nesta categoria';
+                    body.appendChild(empty);
                 }
 
                 if (menuEditMode) {
-                    bodyHTML += `<div class="add-new-btn" onclick="openAddItemModal('${safeCategory}')">Adicionar item em "${category}"</div>`;
+                    const addItemBtn = document.createElement('div');
+                    addItemBtn.className = 'add-new-btn';
+                    addItemBtn.textContent = `Adicionar item em "${category}"`;
+                    addItemBtn.addEventListener('click', () => openAddItemModal(category));
+                    body.appendChild(addItemBtn);
                 }
 
-                bodyHTML += `</div>`;
-
-                categoryDiv.innerHTML = headerHTML + bodyHTML;
+                categoryDiv.appendChild(header);
+                categoryDiv.appendChild(body);
                 container.appendChild(categoryDiv);
             }
 
@@ -1627,7 +1690,7 @@
                 itemsHTML += `
                     <div class="order-item">
                         <div class="order-item-left">
-                            <div class="order-item-name">${item.name}</div>
+                            <div class="order-item-name">${escapeHtml(item.name)}</div>
                             <div class="order-item-controls">
                                 <button class="qty-btn" onclick="decreaseQty('${key}')">−</button>
                                 <div class="qty-display">${item.quantity}x</div>
